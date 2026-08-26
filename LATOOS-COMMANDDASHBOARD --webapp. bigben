@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Realtime Admin Dashboard, GitHub Upload, Scanner and Copy Console">
+  <title>LATOOS Realtime Command Center</title>
+
+  <style>
+    :root {
+      font-family: Arial, sans-serif;
+      color: #1f2937;
+      background: #f3f4f6;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 25px;
+      min-height: 100vh;
+      background: #f3f4f6;
+    }
+
+    .app-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      padding: 24px;
+      color: #fff;
+      background: #111827;
+      border-radius: 12px;
+    }
+
+    h1,
+    h2,
+    p {
+      margin-top: 0;
+    }
+
+    h1 {
+      margin-bottom: 8px;
+    }
+
+    .app-header p {
+      margin-bottom: 0;
+      color: #d1d5db;
+    }
+
+    .connection-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+    }
+
+    .status-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #ef4444;
+    }
+
+    .status-dot.online {
+      background: #22c55e;
+    }
+
+    .status-dot.offline {
+      background: #ef4444;
+    }
+
+    #currentTime {
+      white-space: nowrap;
+      color: #d1d5db;
+    }
+
+    .dashboard {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+      margin-top: 20px;
+    }
+
+    .panel {
+      padding: 20px;
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, .06);
+    }
+
+    .panel-heading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    label {
+      display: block;
+      margin: 12px 0 8px;
+      font-weight: bold;
+    }
+
+    input,
+    button {
+      font-size: 1rem;
+    }
+
+    input {
+      width: 100%;
+      min-width: 0;
+      padding: 10px;
+      border: 1px solid #9ca3af;
+      border-radius: 6px;
+    }
+
+    button {
+      padding: 10px 16px;
+      color: #fff;
+      background: #2563eb;
+      border: 0;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #1d4ed8;
+    }
+
+    button.secondary {
+      background: #4b5563;
+    }
+
+    button.secondary:hover {
+      background: #374151;
+    }
+
+    button.success {
+      background: #16a34a;
+    }
+
+    button.success:hover {
+      background: #15803d;
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: .6;
+    }
+
+    .message-row,
+    .button-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .message-row input {
+      flex: 1;
+    }
+
+    .message-status {
+      min-height: 20px;
+      margin: 12px 0 0;
+      color: #2563eb;
+    }
+
+    .help {
+      color: #6b7280;
+      font-size: .9rem;
+      line-height: 1.4;
+    }
+
+    .route {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 20px 0;
+      color: #374151;
+      font-weight: bold;
+    }
+
+    .route strong {
+      color: #2563eb;
+    }
+
+    .message-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 0;
+      margin: 0;
+      list-style: none;
+    }
+
+    .message-list li {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 10px;
+      padding: 12px;
+      background: #f9fafb;
+      border-radius: 6px;
+    }
+
+    .message-list time {
+      color: #6b7280;
+      font-size: .85rem;
+    }
+
+    .empty-message {
+      display: block !important;
+      color: #6b7280;
+      text-align: center;
+    }
+
+    .image-picker-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+      margin-top: 16px;
+    }
+
+    .image-picker-card {
+      padding: 12px;
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+    }
+
+    .image-picker-card label {
+      margin-top: 0;
+    }
+
+    .image-preview {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 150px;
+      margin-top: 12px;
+      overflow: hidden;
+      color: #6b7280;
+      background: #e5e7eb;
+      border-radius: 6px;
+      text-align: center;
+    }
+
+    .image-preview img {
+      display: none;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: #fff;
+    }
+
+    .image-preview.has-image img {
+      display: block;
+    }
+
+    .image-preview.has-image .preview-placeholder {
+      display: none;
+    }
+
+    .clear-image {
+      width: 100%;
+      margin-top: 10px;
+    }
+
+    .scanner {
+      width: 100%;
+      max-height: 360px;
+      margin-top: 12px;
+      background: #111827;
+      border-radius: 8px;
+    }
+
+    #scanCanvas {
+      display: none;
+      width: 100%;
+      margin-top: 12px;
+      border-radius: 8px;
+    }
+
+    .scan-status {
+      min-height: 20px;
+      margin: 12px 0 0;
+      color: #2563eb;
+    }
+
+    footer {
+      padding: 20px 0;
+      color: #6b7280;
+      text-align: center;
+    }
+
+    @media (max-width: 700px) {
+      body {
+        padding: 12px;
+      }
+
+      .app-header {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .message-row,
+      .button-row {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="app-header">
+    <div>
+      <h1>LATOOS Command Center</h1>
+      <p>Admin Dashboard → Scanners → Sensors → Cloud → Robot Brain</p>
+    </div>
+
+    <div class="connection-status" aria-live="polite">
+      <span id="connectionIndicator" class="status-dot offline"></span>
+      <span id="connectionStatus">Offline</span>
+    </div>
+
+    <time id="currentTime" aria-label="Current time"></time>
+  </header>
+
+  <main class="dashboard">
+    <section class="panel">
+      <h2>Realtime Messenger</h2>
+
+      <form id="messageForm">
+        <label for="messageInput">Message to robot system</label>
+
+        <div class="message-row">
+          <input
+            id="messageInput"
+            name="message"
+            type="text"
+            placeholder="Enter a command or message"
+            autocomplete="off"
+            required
+          >
+          <button type="submit">Send</button>
+        </div>
+      </form>
+
+      <p id="messageStatus" class="message-status" aria-live="polite"></p>
+    </section>
+
+    <section class="panel">
+      <h2>System Route</h2>
+
+      <div class="route" aria-label="Realtime message route">
+        <span>Admin</span>
+        <strong>→</strong>
+        <span>Sensors</span>
+        <strong>→</strong>
+        <span>Cloud</span>
+        <strong>→</strong>
+        <span>Robot Brain</span>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Gallery Image Picker</h2>
+
+      <p class="help">
+        Choose images from your device gallery for the mascot, logo, and snippet image.
+        Selected images are previewed immediately in this dashboard.
+      </p>
+
+      <div class="image-picker-grid">
+        <div class="image-picker-card">
+          <label for="mascotImage">Mascot image</label>
+          <input
+            id="mascotImage"
+            type="file"
+            accept="image/*"
+            data-preview="mascotPreview"
+          >
+
+          <div id="mascotPreview" class="image-preview">
+            <span class="preview-placeholder">No mascot selected</span>
+            <img alt="Mascot preview">
+          </div>
+
+          <button
+            class="clear-image secondary"
+            type="button"
+            data-input="mascotImage"
+            data-preview="mascotPreview"
+          >
+            Clear Mascot
+          </button>
+        </div>
+
+        <div class="image-picker-card">
+          <label for="logoImage">Logo image</label>
+          <input
+            id="logoImage"
+            type="file"
+            accept="image/*"
+            data-preview="logoPreview"
+          >
+
+          <div id="logoPreview" class="image-preview">
+            <span class="preview-placeholder">No logo selected</span>
+            <img alt="Logo preview">
+          </div>
+
+          <button
+            class="clear-image secondary"
+            type="button"
+            data-input="logoImage"
+            data-preview="logoPreview"
+          >
+            Clear Logo
+          </button>
+        </div>
+
+        <div class="image-picker-card">
+          <label for="snippetImage">Snippet image</label>
+          <input
+            id="snippetImage"
+            type="file"
+            accept="image/*"
+            data-preview="snippetPreview"
+          >
+
+          <div id="snippetPreview" class="image-preview">
+            <span class="preview-placeholder">No snippet selected</span>
+            <img alt="Snippet image preview">
+          </div>
+
+          <button
+            class="clear-image secondary"
+            type="button"
+            data-input="snippetImage"
+            data-preview="snippetPreview"
+          >
+            Clear Snippet
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>GitHub Code Upload</h2>
+
+      <p class="help">
+        Select the project files, enter the repository details, then upload them
+        directly to the repository's selected branch.
+      </p>
+
+      <label for="githubOwner">GitHub username or organization</label>
+      <input id="githubOwner" type="text" placeholder="example-user">
+
+      <label for="githubRepo">Repository name</label>
+      <input id="githubRepo" type="text" placeholder="robot-dashboard">
+
+      <label for="githubBranch">Branch</label>
+      <input id="githubBranch" type="text" value="main">
+
+      <label for="githubToken">GitHub Personal Access Token</label>
+      <input
+        id="githubToken"
+        type="password"
+        placeholder="github_pat_..."
+        autocomplete="off"
+      >
+
+      <label for="codeFiles">Project files</label>
+      <input id="codeFiles" type="file" multiple>
+
+      <div class="button-row" style="margin-top: 12px;">
+        <button id="uploadCode" class="success" type="button">
+          Upload Entire Code
+        </button>
+        <button id="openRepository" class="secondary" type="button">
+          Open Repository
+        </button>
+      </div>
+
+      <p id="uploadStatus" class="message-status" aria-live="polite"></p>
+    </section>
+
+    <section class="panel">
+      <h2>Scanner and Photocopy</h2>
+
+      <p class="help">
+        Camera access normally requires HTTPS or localhost. Allow camera access
+        when prompted, capture the document, then use Photocopy to print it.
+      </p>
+
+      <video id="scannerVideo" class="scanner" autoplay playsinline></video>
+      <canvas id="scanCanvas"></canvas>
+
+      <div class="button-row" style="margin-top: 12px;">
+        <button id="startScanner" type="button">Start Scanner</button>
+        <button id="captureScan" type="button" disabled>Scan Document</button>
+        <button id="printScan" class="secondary" type="button" disabled>
+          Photocopy / Print
+        </button>
+      </div>
+
+      <p id="scanStatus" class="scan-status" aria-live="polite"></p>
+    </section>
+
+    <section class="panel">
+      <div class="panel-heading">
+        <h2>Incoming Messages</h2>
+        <button id="clearMessages" type="button">Clear</button>
+      </div>
+
+      <ul id="messageList" class="message-list" aria-live="polite">
+        <li class="empty-message">No realtime messages received.</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <small>Realtime communication console</small>
+  </footer>
+
+  <script>
+    (() => {
+      const socketUrl = window.REALTIME_SOCKET_URL || "";
+
+      const messageForm = document.getElementById("messageForm");
+      const messageInput = document.getElementById("messageInput");
+      const messageList = document.getElementById("messageList");
+      const messageStatus = document.getElementById("messageStatus");
+      const connectionStatus = document.getElementById("connectionStatus");
+      const connectionIndicator = document.getElementById("connectionIndicator");
+      const clearMessages = document.getElementById("clearMessages");
+      const currentTime = document.getElementById("currentTime");
+
+      const githubOwner = document.getElementById("githubOwner");
+      const githubRepo = document.getElementById("githubRepo");
+      const githubBranch = document.getElementById("githubBranch");
+      const githubToken = document.getElementById("githubToken");
+      const codeFiles = document.getElementById("codeFiles");
+      const uploadCode = document.getElementById("uploadCode");
+      const openRepository = document.getElementById("openRepository");
+      const uploadStatus = document.getElementById("uploadStatus");
+
+      const scannerVideo = document.getElementById("scannerVideo");
+      const scanCanvas = document.getElementById("scanCanvas");
+      const startScanner = document.getElementById("startScanner");
+      const captureScan = document.getElementById("captureScan");
+      const printScan = document.getElementById("printScan");
+      const scanStatus = document.getElementById("scanStatus");
+
+      let socket = null;
+      let channel = null;
+      let cameraStream = null;
+
+      function showTime() {
+        currentTime.textContent = new Date().toUTCString();
+      }
+
+      function setConnectionStatus(status, online) {
+        connectionStatus.textContent = status;
+        connectionIndicator.className =
+          `status-dot ${online ? "online" : "offline"}`;
+      }
+
+      function addMessage(message, source = "Realtime") {
+        const emptyMessage = messageList.querySelector(".empty-message");
+
+        if (emptyMessage) {
+          emptyMessage.remove();
+        }
+
+        const item = document.createElement("li");
+        const sourceElement = document.createElement("strong");
+        const messageElement = document.createElement("span");
+        const timeElement = document.createElement("time");
+
+        sourceElement.textContent = source;
+        messageElement.textContent = message;
+        timeElement.textContent = new Date().toLocaleTimeString();
+
+        item.append(sourceElement, messageElement, timeElement);
+        messageList.prepend(item);
+      }
+
+      function handleIncoming(data) {
+        const message = typeof data === "string" ? data : data?.message;
+
+        if (message) {
+          const source =
+            typeof data === "string" ? "Realtime" : data.source || "Realtime";
+
+          addMessage(message, source);
+        }
+      }
+
+      function connectRealtime() {
+        if (socketUrl && "WebSocket" in window) {
+          socket = new WebSocket(socketUrl);
+
+          socket.addEventListener("open", () => {
+            setConnectionStatus("Connected", true);
+          });
+
+          socket.addEventListener("message", event => {
+            try {
+              handleIncoming(JSON.parse(event.data));
+            } catch {
+              handleIncoming(event.data);
+            }
+          });
+
+          socket.addEventListener("close", () => {
+            setConnectionStatus("Disconnected", false);
+          });
+
+          socket.addEventListener("error", () => {
+            setConnectionStatus("Connection error", false);
+          });
+
+          return;
+        }
+
+        if ("BroadcastChannel" in window) {
+          channel = new BroadcastChannel("latoos-realtime");
+
+          channel.addEventListener("message", event => {
+            handleIncoming(event.data);
+          });
+
+          setConnectionStatus("Local realtime mode", true);
+        } else {
+          setConnectionStatus("Demo mode", true);
+        }
+      }
+
+      function setupImagePickers() {
+        document.querySelectorAll("input[data-preview]").forEach(input => {
+          input.addEventListener("change", () => {
+            const preview = document.getElementById(input.dataset.preview);
+            const image = preview.querySelector("img");
+            const file = input.files[0];
+
+            if (!file || !file.type.startsWith("image/")) {
+              input.value = "";
+              preview.classList.remove("has-image");
+              image.removeAttribute("src");
+              return;
+            }
+
+            if (image.dataset.objectUrl) {
+              URL.revokeObjectURL(image.dataset.objectUrl);
+            }
+
+            const objectUrl = URL.createObjectURL(file);
+            image.src = objectUrl;
+            image.dataset.objectUrl = objectUrl;
+            preview.classList.add("has-image");
+          });
+        });
+
+        document.querySelectorAll(".clear-image").forEach(button => {
+          button.addEventListener("click", () => {
+            const input = document.getElementById(button.dataset.input);
+            const preview = document.getElementById(button.dataset.preview);
+            const image = preview.querySelector("img");
+
+            if (image.dataset.objectUrl) {
+              URL.revokeObjectURL(image.dataset.objectUrl);
+              delete image.dataset.objectUrl;
+            }
+
+            input.value = "";
+            image.removeAttribute("src");
+            preview.classList.remove("has-image");
+          });
+        });
+      }
+
+      messageForm.addEventListener("submit", event => {
+        event.preventDefault();
+
+        const message = messageInput.value.trim();
+
+        if (!message) {
+          return;
+        }
+
+        const payload = {
+          type: "ADMIN_MESSAGE",
+          source: "ADMIN_DASHBOARD",
+          message,
+          timestamp: new Date().toISOString()
+        };
+
+        if (socket?.readyState === WebSocket.OPEN) {
+          socket.send(JSON.stringify(payload));
+        } else if (channel) {
+          channel.postMessage(payload);
+        }
+
+        addMessage(message, "Admin Dashboard");
+        messageStatus.textContent = "Message sent to the realtime route.";
+        messageInput.value = "";
+        messageInput.focus();
+      });
+
+      clearMessages.addEventListener("click", () => {
+        messageList.innerHTML =
+          '<li class="empty-message">No realtime messages received.</li>';
+        messageStatus.textContent = "Messages cleared.";
+      });
+
+      function encodeBase64(bytes) {
+        let binary = "";
+
+        for (let index = 0; index < bytes.length; index += 1) {
+          binary += String.fromCharCode(bytes[index]);
+        }
+
+        return btoa(binary);
+      }
+
+      async function getExistingFileSha(apiUrl, token) {
+        const response = await fetch(apiUrl, {
+          headers: {
+            Accept: "application/vnd.github+json",
+            Authorization: `Bearer ${token}`,
+            "X-GitHub-Api-Version": "2022-11-28"
+          }
+        });
+
+        if (response.status === 404) {
+          return undefined;
+        }
+
+        if (!response.ok) {
+          throw new Error(`Could not inspect repository: ${response.status}`);
+        }
+
+        const data = await response.json();
+        return Array.isArray(data) ? undefined : data.sha;
+      }
+
+      async function uploadProjectFiles() {
+        const owner = githubOwner.value.trim();
+        const repo = githubRepo.value.trim();
+        const branch = githubBranch.value.trim() || "main";
+        const token = githubToken.value.trim();
+        const files = Array.from(codeFiles.files);
+
+        if (!owner || !repo || !token || !files.length) {
+          uploadStatus.textContent =
+            "Enter the repository details, token, and select at least one file.";
+          return;
+        }
+
+        uploadCode.disabled = true;
+        uploadStatus.textContent = `Uploading ${files.length} file(s)...`;
+
+        try {
+          for (const file of files) {
+            const relativePath = file.webkitRelativePath || file.name;
+            const path = relativePath.replace(/^.*?\/(?=[^/]+$)/, "");
+            const bytes = new Uint8Array(await file.arrayBuffer());
+            const apiUrl =
+              `https://api.github.com/repos/${encodeURIComponent(owner)}` +
+              `/${encodeURIComponent(repo)}/contents/${path}`;
+
+            const sha = await getExistingFileSha(apiUrl, token);
+            const body = {
+              message: `Upload ${path}`,
+              content: encodeBase64(bytes),
+              branch
+            };
+
+            if (sha) {
+              body.sha = sha;
+            }
+
+            const response = await fetch(apiUrl, {
+              method: "PUT",
+              headers: {
+                Accept: "application/vnd.github+json",
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+                "X-GitHub-Api-Version": "2022-11-28"
+              },
+              body: JSON.stringify(body)
+            });
+
+            if (!response.ok) {
+              const error = await response.json().catch(() => ({}));
+              throw new Error(error.message || `Upload failed: ${path}`);
+            }
+          }
+
+          uploadStatus.textContent =
+            "Upload complete. The selected files are now in GitHub.";
+          githubToken.value = "";
+        } catch (error) {
+          uploadStatus.textContent = `Upload error: ${error.message}`;
+        } finally {
+          uploadCode.disabled = false;
+        }
+      }
+
+      uploadCode.addEventListener("click", uploadProjectFiles);
+
+      openRepository.addEventListener("click", () => {
+        const owner = githubOwner.value.trim();
+        const repo = githubRepo.value.trim();
+        const branch = githubBranch.value.trim() || "main";
+
+        if (!owner || !repo) {
+          uploadStatus.textContent =
+            "Enter the GitHub username=latoadeoye  & repos-name=LATOOS-COMMANDCENTER+MESSENGER REALTIME";
+          return;
+        }
+
+        window.open(
+          `https://github.com/${encodeURIComponent(owner)}/` +
+          `${encodeURIComponent(repo)}/tree/${encodeURIComponent(branch)}`,
+          "_blank",
+          "noopener"
+        );
+      });
+
+      startScanner.addEventListener("click", async () => {
+        if (!navigator.mediaDevices?.getUserMedia) {
+          scanStatus.textContent = "Camera scanning is not supported by this browser.";
+          return;
+        }
+
+        try {
+          cameraStream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: { ideal: "environment" } },
+            audio: false
+          });
+
+          scannerVideo.srcObject = cameraStream;
+          captureScan.disabled = false;
+          scanStatus.textContent = "Camera ready. Position the document and scan.";
+        } catch {
+          scanStatus.textContent =
+            "Camera access was denied or is unavailable. Use HTTPS or localhost.";
+        }
+      });
+
+      captureScan.addEventListener("click", () => {
+        if (!scannerVideo.videoWidth) {
+          scanStatus.textContent = "Start the scanner before capturing.";
+          return;
+        }
+
+        scanCanvas.width = scannerVideo.videoWidth;
+        scanCanvas.height = scannerVideo.videoHeight;
+
+        const context = scanCanvas.getContext("2d");
+        context.drawImage(
+          scannerVideo,
+          0,
+          0,
+          scanCanvas.width,
+          scanCanvas.height
+        );
+
+        scanCanvas.style.display = "block";
+        printScan.disabled = false;
+        scanStatus.textContent = "Document scanned successfully.";
+      });
+
+      printScan.addEventListener("click", () => {
+        const image = scanCanvas.toDataURL("image/png");
+        const printWindow = window.open("", "_blank");
+
+        if (!printWindow) {
+          scanStatus.textContent = "Allow pop-ups to print the scanned document.";
+          return;
+        }
+
+        printWindow.document.write(`
+          <!doctype html>
+          <html>
+            <head><title>Scanned Document Copy</title></head>
+            <body style="margin:0;text-align:center">
+              <img src="${image}" style="max-width:100%">
+              <script>
+                window.onload = () => {
+                  window.print();
+                  window.onafterprint = () => window.close();
+                };
+              <\/script>
+            </body>
+          </html>
+        `);
+
+        printWindow.document.close();
+      });
+
+      setupImagePickers();
+      showTime();
+      setInterval(showTime, 1000);
+      connectRealtime();
+    })();
+  </script>
+</body>
+</html>
